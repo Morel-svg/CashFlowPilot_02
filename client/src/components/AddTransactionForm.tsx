@@ -6,33 +6,33 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { CalendarIcon, DollarSign } from "lucide-react";
-
-interface TransactionFormData {
-  amount: string;
-  description: string;
-  category: string;
-  source: string;
-  date: string;
-}
+import type { InsertTransaction } from "@shared/schema";
 
 interface AddTransactionFormProps {
-  onSubmit?: (data: TransactionFormData) => void;
+  onSubmit?: (data: InsertTransaction) => void;
   onCancel?: () => void;
 }
 
 export default function AddTransactionForm({ onSubmit, onCancel }: AddTransactionFormProps) {
-  const [formData, setFormData] = useState<TransactionFormData>({
+  const [formData, setFormData] = useState({
     amount: '',
     description: '',
-    category: '',
-    source: '',
-    date: new Date().toISOString().split('T')[0]
+    category: '' as 'session' | 'session-coaching' | 'monthly-subscription' | 'weekly-subscription' | '',
+    source: '' as 'wave' | 'orange-money' | 'manual' | '',
+    date: new Date().toISOString().split('T')[0],
+    status: 'completed' as 'completed' | 'pending' | 'failed'
   });
 
-  const [errors, setErrors] = useState<Partial<TransactionFormData>>({});
+  const [errors, setErrors] = useState<{
+    amount?: string;
+    description?: string;
+    category?: string;
+    source?: string;
+    date?: string;
+  }>({});
 
   const validateForm = () => {
-    const newErrors: Partial<TransactionFormData> = {};
+    const newErrors: typeof errors = {};
     
     if (!formData.amount || parseFloat(formData.amount) <= 0) {
       newErrors.amount = 'Amount must be greater than 0';
@@ -57,14 +57,21 @@ export default function AddTransactionForm({ onSubmit, onCancel }: AddTransactio
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (validateForm()) {
-      onSubmit?.(formData);
-      console.log('Transaction submitted:', formData);
+      const submitData: InsertTransaction = {
+        amount: formData.amount,
+        description: formData.description,
+        category: formData.category as any,
+        source: formData.source as any,
+        status: formData.status,
+        date: new Date(formData.date)
+      };
+      onSubmit?.(submitData);
     }
   };
 
-  const updateField = (field: keyof TransactionFormData, value: string) => {
+  const updateField = (field: keyof typeof formData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    if (errors[field]) {
+    if (errors[field as keyof typeof errors]) {
       setErrors(prev => ({ ...prev, [field]: undefined }));
     }
   };

@@ -1,21 +1,24 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, DollarSign, Calendar, Activity } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface StatsData {
   totalIncome: number;
-  monthlyIncome: number;
-  weeklyIncome: number;
   transactionCount: number;
-  growthPercentage: number;
-  topSource: string;
+  avgTransaction: number;
+  topCategory: string | null;
+  topSource: string | null;
+  categoryBreakdown: Record<string, number>;
+  sourceBreakdown: Record<string, number>;
 }
 
 interface DashboardStatsProps {
-  data: StatsData;
+  data?: StatsData;
+  isLoading?: boolean;
 }
 
-export default function DashboardStats({ data }: DashboardStatsProps) {
+export default function DashboardStats({ data, isLoading = false }: DashboardStatsProps) {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -25,34 +28,56 @@ export default function DashboardStats({ data }: DashboardStatsProps) {
     }).format(amount);
   };
 
+  if (isLoading) {
+    return (
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        {[...Array(4)].map((_, index) => (
+          <Card key={index} className="hover-elevate">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-4 w-4" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-8 w-20 mb-2" />
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-5 w-16" />
+                <Skeleton className="h-3 w-20" />
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
   const stats = [
     {
       title: "Total Income",
-      value: formatCurrency(data.totalIncome),
+      value: formatCurrency(data?.totalIncome || 0),
       icon: DollarSign,
-      change: `+${data.growthPercentage}%`,
-      description: "vs last month"
+      change: data?.topSource ? `Top: ${data.topSource === 'orange-money' ? 'Orange Money' : data.topSource === 'wave' ? 'Wave' : 'Manual'}` : "No data",
+      description: "All time"
     },
     {
-      title: "This Month",
-      value: formatCurrency(data.monthlyIncome),
-      icon: Calendar,
-      change: "Current month",
-      description: "Monthly total"
-    },
-    {
-      title: "This Week", 
-      value: formatCurrency(data.weeklyIncome),
+      title: "Avg Transaction",
+      value: formatCurrency(data?.avgTransaction || 0),
       icon: TrendingUp,
-      change: "Weekly total",
-      description: "7 days"
+      change: data?.topCategory ? `Top: ${data.topCategory.replace('-', ' ')}` : "No data",
+      description: "Per transaction"
     },
     {
-      title: "Transactions",
-      value: data.transactionCount.toString(),
+      title: "Total Transactions",
+      value: (data?.transactionCount || 0).toString(),
       icon: Activity,
-      change: data.topSource,
-      description: "Top source"
+      change: "Total count",
+      description: "All transactions"
+    },
+    {
+      title: "Categories",
+      value: data?.categoryBreakdown ? Object.keys(data.categoryBreakdown).length.toString() : "0",
+      icon: Calendar,
+      change: "Active categories",
+      description: "In use"
     }
   ];
 

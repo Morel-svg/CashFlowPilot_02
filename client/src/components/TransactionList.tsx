@@ -5,23 +5,16 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Search, Filter, MoreHorizontal } from "lucide-react";
 import { useState } from "react";
-
-export interface Transaction {
-  id: string;
-  amount: number;
-  description: string;
-  category: string;
-  source: 'wave' | 'orange-money' | 'manual';
-  date: string;
-  status: 'completed' | 'pending' | 'failed';
-}
+import type { Transaction } from "@shared/schema";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface TransactionListProps {
   transactions: Transaction[];
+  isLoading?: boolean;
   onFilterChange?: (filters: { search: string; category: string; source: string }) => void;
 }
 
-export default function TransactionList({ transactions, onFilterChange }: TransactionListProps) {
+export default function TransactionList({ transactions, isLoading = false, onFilterChange }: TransactionListProps) {
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [sourceFilter, setSourceFilter] = useState("all");
@@ -52,16 +45,18 @@ export default function TransactionList({ transactions, onFilterChange }: Transa
     return variants[status];
   };
 
-  const formatCurrency = (amount: number) => {
+  const formatCurrency = (amount: string | number) => {
+    const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 0,
-    }).format(amount);
+    }).format(numAmount);
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+  const formatDate = (date: Date | string) => {
+    const dateObj = typeof date === 'string' ? new Date(date) : date;
+    return dateObj.toLocaleDateString('en-US', {
       month: 'short',
       day: 'numeric',
       year: 'numeric'
@@ -130,59 +125,83 @@ export default function TransactionList({ transactions, onFilterChange }: Transa
       </CardHeader>
       
       <CardContent>
-        <div className="space-y-3">
-          {filteredTransactions.map((transaction) => (
-            <div
-              key={transaction.id}
-              className="flex items-center justify-between p-4 border border-border rounded-lg hover-elevate"
-              data-testid={`row-transaction-${transaction.id}`}
-            >
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-3 mb-2">
-                  <h4 className="font-medium text-foreground truncate">
-                    {transaction.description}
-                  </h4>
-                  <Badge 
-                    className={`${getSourceBadge(transaction.source).color} text-xs`}
-                    data-testid={`badge-source-${transaction.id}`}
-                  >
-                    {transaction.source === 'orange-money' ? 'Orange Money' : 
-                     transaction.source === 'wave' ? 'Wave' : 'Manual'}
-                  </Badge>
+        {isLoading ? (
+          <div className="space-y-3">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="flex items-center justify-between p-4 border border-border rounded-lg">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Skeleton className="h-4 w-48" />
+                    <Skeleton className="h-5 w-16" />
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <Skeleton className="h-3 w-20" />
+                    <Skeleton className="h-3 w-16" />
+                    <Skeleton className="h-5 w-16" />
+                  </div>
                 </div>
-                
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                  <span>{transaction.category}</span>
-                  <span>{formatDate(transaction.date)}</span>
-                  <Badge 
-                    className={`${getStatusBadge(transaction.status)} text-xs`}
-                    data-testid={`badge-status-${transaction.id}`}
-                  >
-                    {transaction.status}
-                  </Badge>
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-6 w-16" />
+                  <Skeleton className="h-9 w-9" />
                 </div>
               </div>
-              
-              <div className="flex items-center gap-3">
-                <div className="text-right">
-                  <div className="font-semibold text-lg text-green-600 dark:text-green-400" data-testid={`text-amount-${transaction.id}`}>
-                    {formatCurrency(transaction.amount)}
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {filteredTransactions.map((transaction) => (
+              <div
+                key={transaction.id}
+                className="flex items-center justify-between p-4 border border-border rounded-lg hover-elevate"
+                data-testid={`row-transaction-${transaction.id}`}
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-3 mb-2">
+                    <h4 className="font-medium text-foreground truncate">
+                      {transaction.description}
+                    </h4>
+                    <Badge 
+                      className={`${getSourceBadge(transaction.source).color} text-xs`}
+                      data-testid={`badge-source-${transaction.id}`}
+                    >
+                      {transaction.source === 'orange-money' ? 'Orange Money' : 
+                       transaction.source === 'wave' ? 'Wave' : 'Manual'}
+                    </Badge>
+                  </div>
+                  
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <span className="capitalize">{transaction.category.replace('-', ' ')}</span>
+                    <span>{formatDate(transaction.date)}</span>
+                    <Badge 
+                      className={`${getStatusBadge(transaction.status)} text-xs`}
+                      data-testid={`badge-status-${transaction.id}`}
+                    >
+                      {transaction.status}
+                    </Badge>
                   </div>
                 </div>
                 
-                <Button size="icon" variant="ghost" data-testid={`button-menu-${transaction.id}`}>
-                  <MoreHorizontal className="h-4 w-4" />
-                </Button>
+                <div className="flex items-center gap-3">
+                  <div className="text-right">
+                    <div className="font-semibold text-lg text-green-600 dark:text-green-400" data-testid={`text-amount-${transaction.id}`}>
+                      {formatCurrency(transaction.amount)}
+                    </div>
+                  </div>
+                  
+                  <Button size="icon" variant="ghost" data-testid={`button-menu-${transaction.id}`}>
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
-            </div>
-          ))}
-          
-          {filteredTransactions.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground" data-testid="text-no-transactions">
-              No transactions found matching your filters.
-            </div>
-          )}
-        </div>
+            ))}
+            
+            {!isLoading && filteredTransactions.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground" data-testid="text-no-transactions">
+                No transactions found matching your filters.
+              </div>
+            )}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

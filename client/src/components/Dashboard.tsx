@@ -3,110 +3,86 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import Header from "./Header";
 import DashboardStats from "./DashboardStats";
-import TransactionList, { Transaction } from "./TransactionList";
+import TransactionList from "./TransactionList";
 import AddTransactionForm from "./AddTransactionForm";
 import DateRangeFilter from "./DateRangeFilter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Settings, Filter, Download, RefreshCw } from "lucide-react";
+import { useTransactions, useStats, useCreateTransaction } from "@/hooks/api";
+import type { InsertTransaction } from "@shared/schema";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Dashboard() {
   const [showAddTransaction, setShowAddTransaction] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [filters, setFilters] = useState<{
+    search?: string;
+    category?: string;
+    source?: string;
+    startDate?: string;
+    endDate?: string;
+  }>({});
+  
+  const { toast } = useToast();
 
-  // todo: remove mock functionality
-  const mockStatsData = {
-    totalIncome: 28750,
-    monthlyIncome: 8200,
-    weeklyIncome: 1850,
-    transactionCount: 247,
-    growthPercentage: 18,
-    topSource: "Wave"
-  };
+  // Fetch real data from API
+  const { data: transactions = [], isLoading: transactionsLoading, refetch: refetchTransactions } = useTransactions(filters);
+  const { data: statsData, isLoading: statsLoading, refetch: refetchStats } = useStats(filters);
+  const createTransactionMutation = useCreateTransaction();
 
-  // todo: remove mock functionality
-  const mockTransactions: Transaction[] = [
-    {
-      id: '1',
-      amount: 85,
-      description: 'Personal Training Session - John',
-      category: 'session',
-      source: 'wave',
-      date: '2024-01-15',
-      status: 'completed'
-    },
-    {
-      id: '2', 
-      amount: 120,
-      description: 'Fitness Coaching - Sarah',
-      category: 'session-coaching',
-      source: 'orange-money',
-      date: '2024-01-14',
-      status: 'completed'
-    },
-    {
-      id: '3',
-      amount: 150,
-      description: 'Monthly Membership - Mike',
-      category: 'monthly-subscription',
-      source: 'manual',
-      date: '2024-01-13',
-      status: 'pending'
-    },
-    {
-      id: '4',
-      amount: 45,
-      description: 'Weekly Pass - Lisa',
-      category: 'weekly-subscription',
-      source: 'wave',
-      date: '2024-01-12',
-      status: 'completed'
-    },
-    {
-      id: '5',
-      amount: 95,
-      description: 'CrossFit Session - Alex',
-      category: 'session',
-      source: 'orange-money',
-      date: '2024-01-11',
-      status: 'failed'
-    },
-    {
-      id: '6',
-      amount: 180,
-      description: 'Nutrition Coaching - Emma',
-      category: 'session-coaching',
-      source: 'wave',
-      date: '2024-01-10',
-      status: 'completed'
+  const handleAddTransaction = async (data: InsertTransaction) => {
+    try {
+      await createTransactionMutation.mutateAsync(data);
+      setShowAddTransaction(false);
+      toast({
+        title: "Transaction Added",
+        description: "Your transaction has been successfully recorded.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to add transaction. Please try again.",
+        variant: "destructive",
+      });
     }
-  ];
-
-  const handleAddTransaction = (data: any) => {
-    console.log('New transaction:', data);
-    setShowAddTransaction(false);
-    // In real app, this would update the transaction list
   };
 
-  const handleFilterChange = (filters: any) => {
-    console.log('Filters changed:', filters);
-    // In real app, this would filter the transactions
+  const handleFilterChange = (newFilters: {
+    search?: string;
+    category?: string;
+    source?: string;
+  }) => {
+    setFilters(prev => ({
+      ...prev,
+      ...newFilters
+    }));
   };
 
-  const handleDateRangeChange = (range: any) => {
-    console.log('Date range changed:', range);
-    // In real app, this would filter transactions by date
+  const handleDateRangeChange = (range: {
+    startDate?: string;
+    endDate?: string;
+  }) => {
+    setFilters(prev => ({
+      ...prev,
+      ...range
+    }));
   };
 
   const handleRefresh = async () => {
-    setIsRefreshing(true);
-    console.log('Refreshing data...');
-    // Simulate API call
-    setTimeout(() => {
-      setIsRefreshing(false);
-      console.log('Data refreshed');
-    }, 2000);
+    try {
+      await Promise.all([refetchTransactions(), refetchStats()]);
+      toast({
+        title: "Data Refreshed",
+        description: "All data has been updated successfully.",
+      });
+    } catch (error) {
+      toast({
+        title: "Refresh Failed",
+        description: "Failed to refresh data. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleExport = () => {
@@ -156,11 +132,11 @@ export default function Dashboard() {
               variant="outline"
               size="sm"
               onClick={handleRefresh}
-              disabled={isRefreshing}
+              disabled={transactionsLoading || statsLoading}
               className="gap-2"
               data-testid="button-refresh"
             >
-              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`h-4 w-4 ${transactionsLoading || statsLoading ? 'animate-spin' : ''}`} />
               Sync
             </Button>
           </div>
@@ -197,11 +173,15 @@ export default function Dashboard() {
           {/* Main Content */}
           <div className="lg:col-span-3 space-y-6">
             {/* Stats */}
-            <DashboardStats data={mockStatsData} />
+            <DashboardStats 
+              data={statsData} 
+              isLoading={statsLoading}
+            />
             
             {/* Transactions */}
             <TransactionList 
-              transactions={mockTransactions}
+              transactions={transactions}
+              isLoading={transactionsLoading}
               onFilterChange={handleFilterChange}
             />
           </div>
@@ -222,42 +202,52 @@ export default function Dashboard() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Top Category</span>
-                    <Badge variant="secondary" className="text-xs">Sessions</Badge>
+                    {statsData?.topCategory ? (
+                      <Badge variant="secondary" className="text-xs capitalize">
+                        {statsData.topCategory?.replace('-', ' ') || 'Unknown'}
+                      </Badge>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">No data</span>
+                    )}
                   </div>
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Avg. Transaction</span>
-                    <span className="font-medium">$112</span>
+                    <span className="font-medium">
+                      ${statsData?.avgTransaction?.toFixed(2) || '0.00'}
+                    </span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">This Week</span>
-                    <span className="font-medium text-green-600">+23%</span>
+                    <span className="text-muted-foreground">Total Transactions</span>
+                    <span className="font-medium">{statsData?.transactionCount || 0}</span>
                   </div>
                 </div>
                 
                 <div className="pt-4 border-t border-border">
                   <p className="text-xs text-muted-foreground mb-2">Payment Sources</p>
                   <div className="space-y-2">
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-secondary rounded-sm"></div>
-                        <span>Wave</span>
-                      </div>
-                      <span className="font-medium">62%</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-primary rounded-sm"></div>
-                        <span>Orange Money</span>
-                      </div>
-                      <span className="font-medium">28%</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <div className="flex items-center gap-2">
-                        <div className="w-3 h-3 bg-muted rounded-sm"></div>
-                        <span>Manual</span>
-                      </div>
-                      <span className="font-medium">10%</span>
-                    </div>
+                    {statsData?.sourceBreakdown ? (
+                      Object.entries(statsData.sourceBreakdown).map(([source, amount]) => {
+                        const percentage = statsData?.totalIncome > 0 
+                          ? ((amount / (statsData.totalIncome || 1)) * 100).toFixed(0)
+                          : '0';
+                        const displayName = source === 'orange-money' ? 'Orange Money' : 
+                                          source === 'wave' ? 'Wave' : 'Manual';
+                        const colorClass = source === 'wave' ? 'bg-secondary' :
+                                          source === 'orange-money' ? 'bg-primary' : 'bg-muted';
+                        
+                        return (
+                          <div key={source} className="flex items-center justify-between text-sm">
+                            <div className="flex items-center gap-2">
+                              <div className={`w-3 h-3 ${colorClass} rounded-sm`}></div>
+                              <span>{displayName}</span>
+                            </div>
+                            <span className="font-medium">{percentage}%</span>
+                          </div>
+                        );
+                      })
+                    ) : (
+                      <div className="text-sm text-muted-foreground">No data available</div>
+                    )}
                   </div>
                 </div>
               </CardContent>
