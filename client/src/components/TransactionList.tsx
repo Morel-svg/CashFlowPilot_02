@@ -105,10 +105,10 @@ export default function TransactionList({ transactions, onFilterChange }: Transa
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Categories</SelectItem>
-              <SelectItem value="sales">Sales</SelectItem>
-              <SelectItem value="services">Services</SelectItem>
-              <SelectItem value="consulting">Consulting</SelectItem>
-              <SelectItem value="products">Products</SelectItem>
+              <SelectItem value="session">Session</SelectItem>
+              <SelectItem value="session-coaching">Session and coaching</SelectItem>
+              <SelectItem value="monthly-subscription">Monthly subscription</SelectItem>
+              <SelectItem value="weekly-subscription">Weekly subscription</SelectItem>
             </SelectContent>
           </Select>
           

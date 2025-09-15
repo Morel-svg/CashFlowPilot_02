@@ -31,10 +31,10 @@ export default function Header({ onAddTransaction, onToggleMenu }: HeaderProps) 
         </Button>
         
         <div className="flex items-center gap-2">
-          <div className="h-8 w-8 bg-primary rounded-md flex items-center justify-center">
-            <span className="text-primary-foreground font-semibold text-sm">IT</span>
+          <div className="h-8 w-8 bg-black rounded-md flex items-center justify-center">
+            <span className="text-white font-semibold text-sm">NG</span>
           </div>
-          <h1 className="font-semibold text-lg text-foreground">IncomeTracker</h1>
+          <h1 className="font-semibold text-lg text-foreground">New Gym</h1>
         </div>
       </div>
 

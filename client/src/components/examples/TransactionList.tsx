@@ -5,45 +5,45 @@ export default function TransactionListExample() {
   const mockTransactions: Transaction[] = [
     {
       id: '1',
-      amount: 2500,
-      description: 'Web Development Services',
-      category: 'services',
+      amount: 85,
+      description: 'Personal Training Session - John',
+      category: 'session',
       source: 'wave',
       date: '2024-01-15',
       status: 'completed'
     },
     {
       id: '2', 
-      amount: 1800,
-      description: 'Product Sales - Website',
-      category: 'sales',
+      amount: 120,
+      description: 'Fitness Coaching - Sarah',
+      category: 'session-coaching',
       source: 'orange-money',
       date: '2024-01-14',
       status: 'completed'
     },
     {
       id: '3',
-      amount: 950,
-      description: 'Consulting Session',
-      category: 'consulting',
+      amount: 150,
+      description: 'Monthly Membership - Mike',
+      category: 'monthly-subscription',
       source: 'manual',
       date: '2024-01-13',
       status: 'pending'
     },
     {
       id: '4',
-      amount: 3200,
-      description: 'Mobile App Development',
-      category: 'services',
+      amount: 45,
+      description: 'Weekly Pass - Lisa',
+      category: 'weekly-subscription',
       source: 'wave',
       date: '2024-01-12',
       status: 'completed'
     },
     {
       id: '5',
-      amount: 650,
-      description: 'Digital Marketing Package',
-      category: 'products',
+      amount: 95,
+      description: 'CrossFit Session - Alex',
+      category: 'session',
       source: 'orange-money',
       date: '2024-01-11',
       status: 'failed'

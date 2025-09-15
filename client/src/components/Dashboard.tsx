@@ -17,11 +17,11 @@ export default function Dashboard() {
 
   // todo: remove mock functionality
   const mockStatsData = {
-    totalIncome: 45250,
-    monthlyIncome: 12800,
-    weeklyIncome: 3200,
-    transactionCount: 127,
-    growthPercentage: 12,
+    totalIncome: 28750,
+    monthlyIncome: 8200,
+    weeklyIncome: 1850,
+    transactionCount: 247,
+    growthPercentage: 18,
     topSource: "Wave"
   };
 
@@ -29,54 +29,54 @@ export default function Dashboard() {
   const mockTransactions: Transaction[] = [
     {
       id: '1',
-      amount: 2500,
-      description: 'Web Development Services',
-      category: 'services',
+      amount: 85,
+      description: 'Personal Training Session - John',
+      category: 'session',
       source: 'wave',
       date: '2024-01-15',
       status: 'completed'
     },
     {
       id: '2', 
-      amount: 1800,
-      description: 'Product Sales - Website',
-      category: 'sales',
+      amount: 120,
+      description: 'Fitness Coaching - Sarah',
+      category: 'session-coaching',
       source: 'orange-money',
       date: '2024-01-14',
       status: 'completed'
     },
     {
       id: '3',
-      amount: 950,
-      description: 'Consulting Session',
-      category: 'consulting',
+      amount: 150,
+      description: 'Monthly Membership - Mike',
+      category: 'monthly-subscription',
       source: 'manual',
       date: '2024-01-13',
       status: 'pending'
     },
     {
       id: '4',
-      amount: 3200,
-      description: 'Mobile App Development',
-      category: 'services',
+      amount: 45,
+      description: 'Weekly Pass - Lisa',
+      category: 'weekly-subscription',
       source: 'wave',
       date: '2024-01-12',
       status: 'completed'
     },
     {
       id: '5',
-      amount: 650,
-      description: 'Digital Marketing Package',
-      category: 'products',
+      amount: 95,
+      description: 'CrossFit Session - Alex',
+      category: 'session',
       source: 'orange-money',
       date: '2024-01-11',
       status: 'failed'
     },
     {
       id: '6',
-      amount: 4200,
-      description: 'E-commerce Platform Setup',
-      category: 'services',
+      amount: 180,
+      description: 'Nutrition Coaching - Emma',
+      category: 'session-coaching',
       source: 'wave',
       date: '2024-01-10',
       status: 'completed'
@@ -125,8 +125,8 @@ export default function Dashboard() {
         {/* Quick Actions Bar */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Income Dashboard</h1>
-            <p className="text-muted-foreground">Track your business income from all sources</p>
+            <h1 className="text-2xl font-bold text-foreground">Gym Income Dashboard</h1>
+            <p className="text-muted-foreground">Track your gym revenue from sessions and memberships</p>
           </div>
           
           <div className="flex items-center gap-2">
@@ -222,11 +222,11 @@ export default function Dashboard() {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Top Category</span>
-                    <Badge variant="secondary" className="text-xs">Services</Badge>
+                    <Badge variant="secondary" className="text-xs">Sessions</Badge>
                   </div>
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Avg. Transaction</span>
-                    <span className="font-medium">$1,847</span>
+                    <span className="font-medium">$112</span>
                   </div>
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">This Week</span>

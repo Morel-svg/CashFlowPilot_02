@@ -152,12 +152,10 @@ export default function AddTransactionForm({ onSubmit, onCancel }: AddTransactio
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="sales">Sales</SelectItem>
-                  <SelectItem value="services">Services</SelectItem>
-                  <SelectItem value="consulting">Consulting</SelectItem>
-                  <SelectItem value="products">Products</SelectItem>
-                  <SelectItem value="freelance">Freelance</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
+                  <SelectItem value="session">Session</SelectItem>
+                  <SelectItem value="session-coaching">Session and coaching</SelectItem>
+                  <SelectItem value="monthly-subscription">Monthly subscription</SelectItem>
+                  <SelectItem value="weekly-subscription">Weekly subscription</SelectItem>
                 </SelectContent>
               </Select>
               {errors.category && (
