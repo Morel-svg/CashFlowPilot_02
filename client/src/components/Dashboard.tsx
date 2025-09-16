@@ -3,18 +3,23 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import Header from "./Header";
 import DashboardStats from "./DashboardStats";
+import AnalyticsCharts from "./AnalyticsCharts";
 import TransactionList from "./TransactionList";
 import AddTransactionForm from "./AddTransactionForm";
+import EditTransactionForm from "./EditTransactionForm";
 import DateRangeFilter from "./DateRangeFilter";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Settings, Filter, Download, RefreshCw } from "lucide-react";
-import { useTransactions, useStats, useCreateTransaction } from "@/hooks/api";
-import type { InsertTransaction } from "@shared/schema";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Settings, Filter, Download, RefreshCw, BarChart3, List } from "lucide-react";
+import { useTransactions, useStats, useCreateTransaction, useUpdateTransaction, usePeriodStats } from "@/hooks/api";
+import type { InsertTransaction, Transaction } from "@shared/schema";
 import { useToast } from "@/hooks/use-toast";
 
 export default function Dashboard() {
   const [showAddTransaction, setShowAddTransaction] = useState(false);
+  const [showEditTransaction, setShowEditTransaction] = useState(false);
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<{
     search?: string;
@@ -29,7 +34,9 @@ export default function Dashboard() {
   // Fetch real data from API
   const { data: transactions = [], isLoading: transactionsLoading, refetch: refetchTransactions } = useTransactions(filters);
   const { data: statsData, isLoading: statsLoading, refetch: refetchStats } = useStats(filters);
+  const { data: periodStatsData, isLoading: periodStatsLoading, refetch: refetchPeriodStats } = usePeriodStats("monthly");
   const createTransactionMutation = useCreateTransaction();
+  const updateTransactionMutation = useUpdateTransaction();
 
   const handleAddTransaction = async (data: InsertTransaction) => {
     try {
@@ -43,6 +50,29 @@ export default function Dashboard() {
       toast({
         title: "Error",
         description: "Failed to add transaction. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEditTransaction = (transaction: Transaction) => {
+    setEditingTransaction(transaction);
+    setShowEditTransaction(true);
+  };
+
+  const handleUpdateTransaction = async (id: string, data: Partial<InsertTransaction>) => {
+    try {
+      await updateTransactionMutation.mutateAsync({ id, data });
+      setShowEditTransaction(false);
+      setEditingTransaction(null);
+      toast({
+        title: "Transaction Updated",
+        description: "Your transaction has been successfully updated.",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update transaction. Please try again.",
         variant: "destructive",
       });
     }
@@ -71,7 +101,7 @@ export default function Dashboard() {
 
   const handleRefresh = async () => {
     try {
-      await Promise.all([refetchTransactions(), refetchStats()]);
+      await Promise.all([refetchTransactions(), refetchStats(), refetchPeriodStats()]);
       toast({
         title: "Data Refreshed",
         description: "All data has been updated successfully.",
@@ -85,9 +115,48 @@ export default function Dashboard() {
     }
   };
 
-  const handleExport = () => {
-    console.log('Exporting data...');
-    // In real app, this would export transaction data
+  // Combine stats data with period stats
+  const combinedStatsData = statsData && periodStatsData ? {
+    ...statsData,
+    ...periodStatsData,
+    weekly: periodStatsData.weekly,
+    monthly: periodStatsData.monthly,
+    growthPercentage: periodStatsData.growthPercentage
+  } : statsData;
+
+  const handleExport = async () => {
+    try {
+      // Build query parameters from current filters
+      const queryParams = new URLSearchParams();
+      
+      if (filters.search) queryParams.append('search', filters.search);
+      if (filters.category && filters.category !== 'all') queryParams.append('category', filters.category);
+      if (filters.source && filters.source !== 'all') queryParams.append('source', filters.source);
+      if (filters.startDate) queryParams.append('startDate', filters.startDate);
+      if (filters.endDate) queryParams.append('endDate', filters.endDate);
+
+      // Create download link
+      const url = `/api/transactions/export?${queryParams.toString()}`;
+      
+      // Create a temporary link element and trigger download
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `transactions_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast({
+        title: "Export Started",
+        description: "Your transaction data is being downloaded as CSV.",
+      });
+    } catch (error) {
+      toast({
+        title: "Export Failed",
+        description: "Failed to export transaction data. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -132,11 +201,11 @@ export default function Dashboard() {
               variant="outline"
               size="sm"
               onClick={handleRefresh}
-              disabled={transactionsLoading || statsLoading}
+              disabled={transactionsLoading || statsLoading || periodStatsLoading}
               className="gap-2"
               data-testid="button-refresh"
             >
-              <RefreshCw className={`h-4 w-4 ${transactionsLoading || statsLoading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`h-4 w-4 ${transactionsLoading || statsLoading || periodStatsLoading ? 'animate-spin' : ''}`} />
               Sync
             </Button>
           </div>
@@ -174,16 +243,42 @@ export default function Dashboard() {
           <div className="lg:col-span-3 space-y-6">
             {/* Stats */}
             <DashboardStats 
-              data={statsData} 
-              isLoading={statsLoading}
+              data={combinedStatsData} 
+              isLoading={statsLoading || periodStatsLoading}
             />
             
-            {/* Transactions */}
-            <TransactionList 
-              transactions={transactions}
-              isLoading={transactionsLoading}
-              onFilterChange={handleFilterChange}
-            />
+            {/* Main Content Tabs */}
+            <Tabs defaultValue="transactions" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="transactions" className="gap-2">
+                  <List className="h-4 w-4" />
+                  Transactions
+                </TabsTrigger>
+                <TabsTrigger value="analytics" className="gap-2">
+                  <BarChart3 className="h-4 w-4" />
+                  Analytics
+                </TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="transactions" className="space-y-6">
+                <TransactionList 
+                  transactions={transactions}
+                  isLoading={transactionsLoading}
+                  onFilterChange={handleFilterChange}
+                  onEditTransaction={handleEditTransaction}
+                />
+              </TabsContent>
+              
+              <TabsContent value="analytics" className="space-y-6">
+                <AnalyticsCharts 
+                  data={{
+                    categoryBreakdown: combinedStatsData?.categoryBreakdown || {},
+                    sourceBreakdown: combinedStatsData?.sourceBreakdown || {},
+                  }}
+                  isLoading={statsLoading || periodStatsLoading}
+                />
+              </TabsContent>
+            </Tabs>
           </div>
           
           {/* Sidebar */}
@@ -266,6 +361,25 @@ export default function Dashboard() {
             onSubmit={handleAddTransaction}
             onCancel={() => setShowAddTransaction(false)}
           />
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Transaction Dialog */}
+      <Dialog open={showEditTransaction} onOpenChange={setShowEditTransaction}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Transaction</DialogTitle>
+          </DialogHeader>
+          {editingTransaction && (
+            <EditTransactionForm 
+              transaction={editingTransaction}
+              onSubmit={handleUpdateTransaction}
+              onCancel={() => {
+                setShowEditTransaction(false);
+                setEditingTransaction(null);
+              }}
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>

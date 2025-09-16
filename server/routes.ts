@@ -226,6 +226,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // GET /api/transactions/export - Export transactions to CSV
+  app.get("/api/transactions/export", async (req, res) => {
+    try {
+      const validationResult = transactionFiltersSchema.safeParse(req.query);
+      
+      if (!validationResult.success) {
+        return res.status(400).json({ 
+          error: "Invalid filter parameters",
+          details: validationResult.error.errors
+        });
+      }
+
+      const { search, category, source, startDate, endDate } = validationResult.data;
+      
+      // Convert 'all' to undefined for storage layer
+      const filters = {
+        search,
+        category: category === 'all' ? undefined : category,
+        source: source === 'all' ? undefined : source,
+        startDate: startDate && !isNaN(startDate.getTime()) ? startDate : undefined,
+        endDate: endDate && !isNaN(endDate.getTime()) ? endDate : undefined,
+      };
+
+      const transactions = await storage.getTransactionsByFilters(filters);
+      
+      // Generate CSV content
+      const csvHeaders = ['Date', 'Description', 'Amount', 'Category', 'Source', 'Status'];
+      const csvRows = transactions.map(transaction => [
+        new Date(transaction.date).toLocaleDateString(),
+        `"${transaction.description.replace(/"/g, '""')}"`, // Escape quotes in description
+        transaction.amount,
+        transaction.category,
+        transaction.source,
+        transaction.status
+      ]);
+      
+      const csvContent = [
+        csvHeaders.join(','),
+        ...csvRows.map(row => row.join(','))
+      ].join('\n');
+
+      // Set headers for CSV download
+      const filename = `transactions_${new Date().toISOString().split('T')[0]}.csv`;
+      res.setHeader('Content-Type', 'text/csv');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      res.send(csvContent);
+    } catch (error) {
+      console.error("Error exporting transactions:", error);
+      res.status(500).json({ error: "Failed to export transactions" });
+    }
+  });
+
   const httpServer = createServer(app);
 
   return httpServer;

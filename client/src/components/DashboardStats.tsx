@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { TrendingUp, DollarSign, Calendar, Activity } from "lucide-react";
+import { TrendingUp, DollarSign, Calendar, Activity, TrendingDown } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface StatsData {
@@ -11,6 +11,15 @@ interface StatsData {
   topSource: string | null;
   categoryBreakdown: Record<string, number>;
   sourceBreakdown: Record<string, number>;
+  growthPercentage?: number;
+  weekly?: {
+    totalIncome: number;
+    transactionCount: number;
+  };
+  monthly?: {
+    totalIncome: number;
+    transactionCount: number;
+  };
 }
 
 interface DashboardStatsProps {
@@ -50,13 +59,24 @@ export default function DashboardStats({ data, isLoading = false }: DashboardSta
     );
   }
 
+  const getGrowthIcon = (growth?: number) => {
+    if (!growth) return null;
+    return growth >= 0 ? <TrendingUp className="h-3 w-3" /> : <TrendingDown className="h-3 w-3" />;
+  };
+
+  const getGrowthColor = (growth?: number) => {
+    if (!growth) return "text-muted-foreground";
+    return growth >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400";
+  };
+
   const stats = [
     {
       title: "Total Income",
       value: formatCurrency(data?.totalIncome || 0),
       icon: DollarSign,
       change: data?.topSource ? `Top: ${data.topSource === 'orange-money' ? 'Orange Money' : data.topSource === 'wave' ? 'Wave' : 'Manual'}` : "No data",
-      description: "All time"
+      description: "All time",
+      growth: data?.growthPercentage
     },
     {
       title: "Avg Transaction",
@@ -66,18 +86,18 @@ export default function DashboardStats({ data, isLoading = false }: DashboardSta
       description: "Per transaction"
     },
     {
-      title: "Total Transactions",
-      value: (data?.transactionCount || 0).toString(),
+      title: "This Week",
+      value: formatCurrency(data?.weekly?.totalIncome || 0),
       icon: Activity,
-      change: "Total count",
-      description: "All transactions"
+      change: `${data?.weekly?.transactionCount || 0} transactions`,
+      description: "Last 7 days"
     },
     {
-      title: "Categories",
-      value: data?.categoryBreakdown ? Object.keys(data.categoryBreakdown).length.toString() : "0",
+      title: "This Month",
+      value: formatCurrency(data?.monthly?.totalIncome || 0),
       icon: Calendar,
-      change: "Active categories",
-      description: "In use"
+      change: `${data?.monthly?.transactionCount || 0} transactions`,
+      description: "Current month"
     }
   ];
 
@@ -103,6 +123,12 @@ export default function DashboardStats({ data, isLoading = false }: DashboardSta
               >
                 {stat.change}
               </Badge>
+              {stat.growth !== undefined && (
+                <div className={`flex items-center gap-1 text-xs ${getGrowthColor(stat.growth)}`}>
+                  {getGrowthIcon(stat.growth)}
+                  <span>{Math.abs(stat.growth)}%</span>
+                </div>
+              )}
               <p className="text-xs text-muted-foreground">
                 {stat.description}
               </p>

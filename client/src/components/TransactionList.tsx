@@ -3,21 +3,35 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Search, Filter, MoreHorizontal } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Search, Filter, MoreHorizontal, Edit, Trash2, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { useState } from "react";
 import type { Transaction } from "@shared/schema";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useDeleteTransaction } from "@/hooks/api";
+import { useToast } from "@/hooks/use-toast";
+
+type SortField = 'date' | 'amount' | 'description' | 'category' | 'source';
+type SortDirection = 'asc' | 'desc';
 
 interface TransactionListProps {
   transactions: Transaction[];
   isLoading?: boolean;
   onFilterChange?: (filters: { search: string; category: string; source: string }) => void;
+  onEditTransaction?: (transaction: Transaction) => void;
 }
 
-export default function TransactionList({ transactions, isLoading = false, onFilterChange }: TransactionListProps) {
+export default function TransactionList({ transactions, isLoading = false, onFilterChange, onEditTransaction }: TransactionListProps) {
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [sourceFilter, setSourceFilter] = useState("all");
+  const [sortField, setSortField] = useState<SortField>('date');
+  const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [deleteTransactionId, setDeleteTransactionId] = useState<string | null>(null);
+  
+  const deleteTransactionMutation = useDeleteTransaction();
+  const { toast } = useToast();
 
   const handleFilterUpdate = () => {
     onFilterChange?.({
@@ -25,6 +39,23 @@ export default function TransactionList({ transactions, isLoading = false, onFil
       category: categoryFilter,
       source: sourceFilter
     });
+  };
+
+  const handleDeleteTransaction = async (id: string) => {
+    try {
+      await deleteTransactionMutation.mutateAsync(id);
+      toast({
+        title: "Transaction Deleted",
+        description: "The transaction has been successfully deleted.",
+      });
+      setDeleteTransactionId(null);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete transaction. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const getSourceBadge = (source: Transaction['source']) => {
@@ -63,12 +94,60 @@ export default function TransactionList({ transactions, isLoading = false, onFil
     });
   };
 
-  const filteredTransactions = transactions.filter(transaction => {
-    const matchesSearch = transaction.description.toLowerCase().includes(search.toLowerCase());
-    const matchesCategory = categoryFilter === 'all' || transaction.category === categoryFilter;
-    const matchesSource = sourceFilter === 'all' || transaction.source === sourceFilter;
-    return matchesSearch && matchesCategory && matchesSource;
-  });
+  const filteredTransactions = transactions
+    .filter(transaction => {
+      const matchesSearch = transaction.description.toLowerCase().includes(search.toLowerCase());
+      const matchesCategory = categoryFilter === 'all' || transaction.category === categoryFilter;
+      const matchesSource = sourceFilter === 'all' || transaction.source === sourceFilter;
+      return matchesSearch && matchesCategory && matchesSource;
+    })
+    .sort((a, b) => {
+      let aValue: any;
+      let bValue: any;
+
+      switch (sortField) {
+        case 'date':
+          aValue = new Date(a.date).getTime();
+          bValue = new Date(b.date).getTime();
+          break;
+        case 'amount':
+          aValue = parseFloat(a.amount);
+          bValue = parseFloat(b.amount);
+          break;
+        case 'description':
+          aValue = a.description.toLowerCase();
+          bValue = b.description.toLowerCase();
+          break;
+        case 'category':
+          aValue = a.category.toLowerCase();
+          bValue = b.category.toLowerCase();
+          break;
+        case 'source':
+          aValue = a.source.toLowerCase();
+          bValue = b.source.toLowerCase();
+          break;
+        default:
+          return 0;
+      }
+
+      if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1;
+      if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1;
+      return 0;
+    });
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
+  };
+
+  const getSortIcon = (field: SortField) => {
+    if (sortField !== field) return <ArrowUpDown className="h-4 w-4" />;
+    return sortDirection === 'asc' ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />;
+  };
 
   return (
     <Card>
@@ -149,6 +228,64 @@ export default function TransactionList({ transactions, isLoading = false, onFil
           </div>
         ) : (
           <div className="space-y-3">
+            {/* Sortable Headers */}
+            <div className="flex items-center justify-between p-4 border border-border rounded-lg bg-muted/50">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-3 mb-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleSort('description')}
+                    className="h-auto p-0 font-medium text-left justify-start hover:bg-transparent"
+                  >
+                    Description
+                    {getSortIcon('description')}
+                  </Button>
+                </div>
+                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleSort('category')}
+                    className="h-auto p-0 text-xs hover:bg-transparent"
+                  >
+                    Category
+                    {getSortIcon('category')}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleSort('date')}
+                    className="h-auto p-0 text-xs hover:bg-transparent"
+                  >
+                    Date
+                    {getSortIcon('date')}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleSort('source')}
+                    className="h-auto p-0 text-xs hover:bg-transparent"
+                  >
+                    Source
+                    {getSortIcon('source')}
+                  </Button>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleSort('amount')}
+                  className="h-auto p-0 font-semibold text-left justify-start hover:bg-transparent"
+                >
+                  Amount
+                  {getSortIcon('amount')}
+                </Button>
+                <div className="w-9" /> {/* Spacer for actions column */}
+              </div>
+            </div>
+
             {filteredTransactions.map((transaction) => (
               <div
                 key={transaction.id}
@@ -188,9 +325,30 @@ export default function TransactionList({ transactions, isLoading = false, onFil
                     </div>
                   </div>
                   
-                  <Button size="icon" variant="ghost" data-testid={`button-menu-${transaction.id}`}>
-                    <MoreHorizontal className="h-4 w-4" />
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button size="icon" variant="ghost" data-testid={`button-menu-${transaction.id}`}>
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem 
+                        onClick={() => onEditTransaction?.(transaction)}
+                        data-testid={`button-edit-${transaction.id}`}
+                      >
+                        <Edit className="h-4 w-4 mr-2" />
+                        Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        onClick={() => setDeleteTransactionId(transaction.id)}
+                        className="text-destructive"
+                        data-testid={`button-delete-${transaction.id}`}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
             ))}
@@ -203,6 +361,27 @@ export default function TransactionList({ transactions, isLoading = false, onFil
           </div>
         )}
       </CardContent>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteTransactionId} onOpenChange={() => setDeleteTransactionId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Transaction</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this transaction? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteTransactionId && handleDeleteTransaction(deleteTransactionId)}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

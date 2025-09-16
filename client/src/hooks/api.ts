@@ -35,6 +35,13 @@ export function useTransactions(filters?: {
 export function useTransaction(id: string) {
   return useQuery<Transaction>({
     queryKey: ["/api/transactions", id],
+    queryFn: async () => {
+      const response = await fetch(`/api/transactions/${id}`);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch transaction: ${response.statusText}`);
+      }
+      return response.json();
+    },
     enabled: !!id,
   });
 }
