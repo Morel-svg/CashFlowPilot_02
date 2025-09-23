@@ -63,7 +63,7 @@ export default function AddTransactionForm({ onSubmit, onCancel }: AddTransactio
         category: formData.category as any,
         source: formData.source as any,
         status: formData.status,
-        date: new Date(formData.date)
+        date: formData.date as any // Send as string, backend will handle conversion
       };
       onSubmit?.(submitData);
     }

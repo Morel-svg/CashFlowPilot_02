@@ -22,6 +22,8 @@ export const transactions = pgTable("transactions", {
 export const insertTransactionSchema = createInsertSchema(transactions).omit({
   id: true,
   createdAt: true,
+}).extend({
+  date: z.coerce.date().optional(), // Allow string dates that can be coerced to Date
 });
 
 export type InsertTransaction = z.infer<typeof insertTransactionSchema>;
