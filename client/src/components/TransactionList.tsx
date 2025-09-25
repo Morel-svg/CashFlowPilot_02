@@ -78,10 +78,11 @@ export default function TransactionList({ transactions, isLoading = false, onFil
 
   const formatCurrency = (amount: string | number) => {
     const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('fr-FR', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'XAF',
       minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(numAmount);
   };
 

@@ -308,7 +308,7 @@ export default function Dashboard() {
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Avg. Transaction</span>
                     <span className="font-medium">
-                      ${statsData?.avgTransaction?.toFixed(2) || '0.00'}
+                      {(statsData?.avgTransaction || 0).toLocaleString('fr-FR')} CFA
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-sm">

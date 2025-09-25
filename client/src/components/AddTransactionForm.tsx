@@ -63,7 +63,7 @@ export default function AddTransactionForm({ onSubmit, onCancel }: AddTransactio
         category: formData.category as any,
         source: formData.source as any,
         status: formData.status,
-        date: formData.date as any // Send as string, backend will handle conversion
+        date: new Date(formData.date)
       };
       onSubmit?.(submitData);
     }
@@ -218,7 +218,7 @@ export default function AddTransactionForm({ onSubmit, onCancel }: AddTransactio
                 </div>
                 {formData.amount && (
                   <div className="text-lg font-semibold text-green-600 dark:text-green-400">
-                    ${parseFloat(formData.amount).toLocaleString()}
+                    {parseFloat(formData.amount).toLocaleString('fr-FR')} CFA
                   </div>
                 )}
               </div>
