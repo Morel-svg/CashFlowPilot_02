@@ -17,7 +17,7 @@ export default function AddTransactionForm({ onSubmit, onCancel }: AddTransactio
   const [formData, setFormData] = useState({
     amount: '',
     description: '',
-    category: '' as 'session' | 'session-coaching' | 'monthly-subscription' | 'weekly-subscription' | '',
+    category: '' as 'session' | 'session-coaching' | 'monthly-subscription' | 'weekly-subscription' | 'others' | '',
     source: '' as 'wave' | 'orange-money' | 'manual' | '',
     date: new Date().toISOString().split('T')[0],
     status: 'completed' as 'completed' | 'pending' | 'failed'
@@ -78,8 +78,9 @@ export default function AddTransactionForm({ onSubmit, onCancel }: AddTransactio
 
   const getSourceColor = (source: string) => {
     switch (source) {
-      case 'wave': return 'bg-secondary text-secondary-foreground';
-      case 'orange-money': return 'bg-primary text-primary-foreground';
+      case 'wave': return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+      case 'orange-money': return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200';
+      case 'manual': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
       default: return '';
     }
   };
@@ -163,6 +164,7 @@ export default function AddTransactionForm({ onSubmit, onCancel }: AddTransactio
                   <SelectItem value="session-coaching">Session and coaching</SelectItem>
                   <SelectItem value="monthly-subscription">Monthly subscription</SelectItem>
                   <SelectItem value="weekly-subscription">Weekly subscription</SelectItem>
+                  <SelectItem value="others">Others</SelectItem>
                 </SelectContent>
               </Select>
               {errors.category && (

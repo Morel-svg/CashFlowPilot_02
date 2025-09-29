@@ -69,12 +69,57 @@ export default function DashboardStats({ data, isLoading = false }: DashboardSta
     return growth >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400";
   };
 
+  const getSourceColor = (source: string) => {
+    switch (source) {
+      case 'wave':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
+      case 'orange-money':
+        return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200';
+      case 'manual':
+        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200';
+      default:
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
+    }
+  };
+
+  const getSourceDotColor = (source: string) => {
+    switch (source) {
+      case 'wave':
+        return 'bg-blue-500';
+      case 'orange-money':
+        return 'bg-orange-500';
+      case 'manual':
+        return 'bg-green-500';
+      default:
+        return 'bg-gray-500';
+    }
+  };
+
+  const formatSourceName = (source: string) => {
+    switch (source) {
+      case 'orange-money':
+        return 'Orange Money';
+      case 'wave':
+        return 'Wave';
+      case 'manual':
+        return 'Manual';
+      default:
+        return source;
+    }
+  };
+
   const stats = [
     {
       title: "Total Income",
       value: formatCurrency(data?.totalIncome || 0),
       icon: DollarSign,
-      change: data?.topSource ? `Top: ${data.topSource === 'orange-money' ? 'Orange Money' : data.topSource === 'wave' ? 'Wave' : 'Manual'}` : "No data",
+      change: data?.topSource ? (
+        <div className="flex items-center gap-1">
+          <div className={`w-2 h-2 rounded-full ${getSourceDotColor(data.topSource)}`}></div>
+          <span>Top: {formatSourceName(data.topSource)}</span>
+        </div>
+      ) : "No data",
+      source: data?.topSource,
       description: "All time",
       growth: data?.growthPercentage
     },
@@ -118,7 +163,7 @@ export default function DashboardStats({ data, isLoading = false }: DashboardSta
             <div className="flex items-center gap-2 mt-2">
               <Badge 
                 variant="secondary" 
-                className="text-xs"
+                className={`text-xs ${stat.source ? getSourceColor(stat.source) : ''}`}
                 data-testid={`badge-change-${index}`}
               >
                 {stat.change}

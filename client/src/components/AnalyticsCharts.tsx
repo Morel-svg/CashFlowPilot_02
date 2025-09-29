@@ -60,20 +60,24 @@ const categoryConfig: ChartConfig = {
     label: "Weekly Subscription",
     color: "hsl(var(--chart-4))",
   },
+  "others": {
+    label: "Others",
+    color: "hsl(var(--chart-5))",
+  },
 };
 
 const sourceConfig: ChartConfig = {
   wave: {
     label: "Wave",
-    color: "hsl(var(--chart-1))",
+    color: "#3B82F6", // Blue
   },
   "orange-money": {
     label: "Orange Money",
-    color: "hsl(var(--chart-2))",
+    color: "#F97316", // Orange
   },
   manual: {
     label: "Manual",
-    color: "hsl(var(--chart-3))",
+    color: "#10B981", // Green
   },
 };
 
@@ -209,9 +213,11 @@ export default function AnalyticsCharts({ data, isLoading = false }: AnalyticsCh
                 outerRadius={80}
                 paddingAngle={2}
               >
-                {sourceData.map((_, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
+                {sourceData.map((entry, index) => {
+                  const sourceKey = entry.source as keyof typeof sourceConfig;
+                  const color = sourceConfig[sourceKey]?.color || COLORS[index % COLORS.length];
+                  return <Cell key={`cell-${index}`} fill={color} />;
+                })}
               </Pie>
               <ChartLegend content={<ChartLegendContent />} />
             </PieChart>

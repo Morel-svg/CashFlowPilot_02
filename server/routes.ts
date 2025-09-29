@@ -7,7 +7,7 @@ import { z } from "zod";
 // Query validation schemas
 const transactionFiltersSchema = z.object({
   search: z.string().optional(),
-  category: z.enum(['session', 'session-coaching', 'monthly-subscription', 'weekly-subscription', 'all']).optional(),
+  category: z.enum(['session', 'session-coaching', 'monthly-subscription', 'weekly-subscription', 'others', 'all']).optional(),
   source: z.enum(['wave', 'orange-money', 'manual', 'all']).optional(),
   startDate: z.coerce.date().optional(),
   endDate: z.coerce.date().optional(),
@@ -75,6 +75,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const validationResult = insertTransactionSchema.safeParse(req.body);
       
       if (!validationResult.success) {
+        console.error("Validation error:", validationResult.error.errors);
         return res.status(400).json({ 
           error: "Invalid transaction data",
           details: validationResult.error.errors

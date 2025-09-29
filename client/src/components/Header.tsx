@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Menu, Plus, Sun, Moon } from "lucide-react";
@@ -9,12 +9,31 @@ interface HeaderProps {
 }
 
 export default function Header({ onAddTransaction, onToggleMenu }: HeaderProps) {
-  const [isDark, setIsDark] = useState(false);
+  const [isDark, setIsDark] = useState(() => {
+    // Check localStorage first, then default to dark mode
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme) {
+      return savedTheme === 'dark';
+    }
+    // Default to dark mode
+    return true;
+  });
+
+  // Apply theme on component mount
+  useEffect(() => {
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDark]);
 
   const toggleTheme = () => {
-    setIsDark(!isDark);
+    const newTheme = !isDark;
+    setIsDark(newTheme);
     document.documentElement.classList.toggle('dark');
-    console.log('Theme toggled:', !isDark ? 'dark' : 'light');
+    localStorage.setItem('theme', newTheme ? 'dark' : 'light');
+    console.log('Theme toggled:', newTheme ? 'dark' : 'light');
   };
 
   return (

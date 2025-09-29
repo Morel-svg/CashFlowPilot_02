@@ -327,8 +327,8 @@ export default function Dashboard() {
                           : '0';
                         const displayName = source === 'orange-money' ? 'Orange Money' : 
                                           source === 'wave' ? 'Wave' : 'Manual';
-                        const colorClass = source === 'wave' ? 'bg-secondary' :
-                                          source === 'orange-money' ? 'bg-primary' : 'bg-muted';
+                        const colorClass = source === 'wave' ? 'bg-blue-500' :
+                                          source === 'orange-money' ? 'bg-orange-500' : 'bg-green-500';
                         
                         return (
                           <div key={source} className="flex items-center justify-between text-sm">

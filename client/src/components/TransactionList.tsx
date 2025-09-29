@@ -60,9 +60,9 @@ export default function TransactionList({ transactions, isLoading = false, onFil
 
   const getSourceBadge = (source: Transaction['source']) => {
     const variants = {
-      'wave': { variant: 'secondary' as const, color: 'bg-secondary text-secondary-foreground' },
-      'orange-money': { variant: 'default' as const, color: 'bg-primary text-primary-foreground' },
-      'manual': { variant: 'outline' as const, color: '' }
+      'wave': { variant: 'secondary' as const, color: 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200' },
+      'orange-money': { variant: 'secondary' as const, color: 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200' },
+      'manual': { variant: 'secondary' as const, color: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' }
     };
     return variants[source];
   };
@@ -184,6 +184,7 @@ export default function TransactionList({ transactions, isLoading = false, onFil
               <SelectItem value="session-coaching">Session and coaching</SelectItem>
               <SelectItem value="monthly-subscription">Monthly subscription</SelectItem>
               <SelectItem value="weekly-subscription">Weekly subscription</SelectItem>
+              <SelectItem value="others">Others</SelectItem>
             </SelectContent>
           </Select>
           
