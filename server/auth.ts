@@ -1,112 +1,100 @@
 import bcrypt from "bcryptjs";
-import { db } from "./db";
-import { users } from "@shared/schema";
-import { eq } from "drizzle-orm";
+import { supabase } from "./db";
 import type { User, InsertUser, LoginRequest } from "@shared/schema";
 
 export class AuthService {
   private static readonly SALT_ROUNDS = 12;
 
-  // Hash password
   static async hashPassword(password: string): Promise<string> {
     return bcrypt.hash(password, this.SALT_ROUNDS);
   }
 
-  // Verify password
   static async verifyPassword(password: string, hash: string): Promise<boolean> {
     return bcrypt.compare(password, hash);
   }
 
-  // Create new user
   static async createUser(userData: InsertUser): Promise<Omit<User, 'passwordHash'>> {
     const { password, confirmPassword, ...userInfo } = userData;
-    
-    // Hash the password
+
     const passwordHash = await this.hashPassword(password);
-    
-    // Check if user already exists
-    const existingUser = await db
-      .select()
-      .from(users)
-      .where(eq(users.email, userInfo.email))
-      .limit(1);
-      
-    if (existingUser.length > 0) {
+
+    const { data: existingUser } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', userInfo.email)
+      .maybeSingle();
+
+    if (existingUser) {
       throw new Error("User already exists with this email");
     }
 
-    // Create user
-    const [newUser] = await db
-      .insert(users)
-      .values({
+    const { data: newUser, error } = await supabase
+      .from('users')
+      .insert({
         ...userInfo,
-        passwordHash,
+        password_hash: passwordHash,
       })
-      .returning();
+      .select()
+      .single();
 
-    // Return user without password hash
-    const { passwordHash: _, ...userWithoutPassword } = newUser;
-    return userWithoutPassword;
+    if (error) throw error;
+
+    const { password_hash: _, ...userWithoutPassword } = newUser;
+    return userWithoutPassword as any;
   }
 
-  // Authenticate user
   static async authenticateUser(credentials: LoginRequest): Promise<Omit<User, 'passwordHash'> | null> {
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(eq(users.email, credentials.email))
-      .limit(1);
+    const { data: user } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', credentials.email)
+      .maybeSingle();
 
-    if (!user || !user.isActive) {
+    if (!user || !user.is_active) {
       return null;
     }
 
-    const isValidPassword = await this.verifyPassword(credentials.password, user.passwordHash);
+    const isValidPassword = await this.verifyPassword(credentials.password, user.password_hash);
     if (!isValidPassword) {
       return null;
     }
 
-    // Update last login
-    await db
-      .update(users)
-      .set({ lastLoginAt: new Date() })
-      .where(eq(users.id, user.id));
+    await supabase
+      .from('users')
+      .update({ last_login_at: new Date().toISOString() })
+      .eq('id', user.id);
 
-    // Return user without password hash
-    const { passwordHash: _, ...userWithoutPassword } = user;
-    return userWithoutPassword;
+    const { password_hash: _, ...userWithoutPassword } = user;
+    return userWithoutPassword as any;
   }
 
-  // Get user by ID
   static async getUserById(id: string): Promise<Omit<User, 'passwordHash'> | null> {
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(eq(users.id, id))
-      .limit(1);
+    const { data: user } = await supabase
+      .from('users')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle();
 
-    if (!user || !user.isActive) {
+    if (!user || !user.is_active) {
       return null;
     }
 
-    const { passwordHash: _, ...userWithoutPassword } = user;
-    return userWithoutPassword;
+    const { password_hash: _, ...userWithoutPassword } = user;
+    return userWithoutPassword as any;
   }
 
-  // Get all users (admin only)
   static async getAllUsers(): Promise<Omit<User, 'passwordHash'>[]> {
-    const allUsers = await db
-      .select()
-      .from(users);
+    const { data: allUsers } = await supabase
+      .from('users')
+      .select('*');
 
-    return allUsers.map(user => {
-      const { passwordHash: _, ...userWithoutPassword } = user;
-      return userWithoutPassword;
+    return (allUsers || []).map(user => {
+      const { password_hash: _, ...userWithoutPassword } = user;
+      return userWithoutPassword as any;
     });
   }
 }
 
-// Middleware for checking authentication
 export function requireAuth(req: any, res: any, next: any) {
   if (!req.session?.user) {
     return res.status(401).json({ error: "Authentication required" });
@@ -114,30 +102,22 @@ export function requireAuth(req: any, res: any, next: any) {
   next();
 }
 
-// Middleware for checking specific roles
 export function requireRole(roles: string[]) {
   return (req: any, res: any, next: any) => {
     if (!req.session?.user) {
       return res.status(401).json({ error: "Authentication required" });
     }
-    
+
     if (!roles.includes(req.session.user.role)) {
       return res.status(403).json({ error: "Insufficient permissions" });
     }
-    
+
     next();
   };
 }
 
-// Declare session user type
 declare module "express-session" {
   interface SessionData {
     user?: Omit<User, 'passwordHash'>;
   }
 }
-
-
-
-
-
-

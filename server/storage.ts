@@ -1,10 +1,7 @@
-import { transactions, type Transaction, type InsertTransaction } from "@shared/schema";
-import { db } from "./db";
-import { eq, desc, and, gte, lte, ilike, sql } from "drizzle-orm";
+import { type Transaction, type InsertTransaction } from "@shared/schema";
+import { supabase } from "./db";
 
-// Interface for transaction storage operations
 export interface IStorage {
-  // Transaction CRUD operations
   getTransaction(id: string): Promise<Transaction | undefined>;
   createTransaction(transaction: InsertTransaction): Promise<Transaction>;
   getAllTransactions(): Promise<Transaction[]>;
@@ -17,8 +14,7 @@ export interface IStorage {
   }): Promise<Transaction[]>;
   updateTransaction(id: string, updates: Partial<InsertTransaction>): Promise<Transaction | undefined>;
   deleteTransaction(id: string): Promise<boolean>;
-  
-  // Dashboard stats
+
   getTransactionStats(startDate?: Date, endDate?: Date): Promise<{
     totalIncome: number;
     transactionCount: number;
@@ -29,20 +25,35 @@ export interface IStorage {
 
 export class DatabaseStorage implements IStorage {
   async getTransaction(id: string): Promise<Transaction | undefined> {
-    const [transaction] = await db.select().from(transactions).where(eq(transactions.id, id));
-    return transaction || undefined;
+    const { data, error } = await supabase
+      .from('transactions')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle();
+
+    if (error) throw error;
+    return data || undefined;
   }
 
   async createTransaction(insertTransaction: InsertTransaction): Promise<Transaction> {
-    const [transaction] = await db
-      .insert(transactions)
-      .values(insertTransaction)
-      .returning();
-    return transaction;
+    const { data, error } = await supabase
+      .from('transactions')
+      .insert(insertTransaction)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
   }
 
   async getAllTransactions(): Promise<Transaction[]> {
-    return await db.select().from(transactions).orderBy(desc(transactions.date));
+    const { data, error } = await supabase
+      .from('transactions')
+      .select('*')
+      .order('date', { ascending: false });
+
+    if (error) throw error;
+    return data || [];
   }
 
   async getTransactionsByFilters(filters: {
@@ -52,49 +63,56 @@ export class DatabaseStorage implements IStorage {
     startDate?: Date;
     endDate?: Date;
   }): Promise<Transaction[]> {
-    const conditions = [];
+    let query = supabase
+      .from('transactions')
+      .select('*');
 
     if (filters.search) {
-      conditions.push(ilike(transactions.description, `%${filters.search}%`));
+      query = query.ilike('description', `%${filters.search}%`);
     }
 
     if (filters.category && filters.category !== 'all') {
-      conditions.push(eq(transactions.category, filters.category as any));
+      query = query.eq('category', filters.category);
     }
 
     if (filters.source && filters.source !== 'all') {
-      conditions.push(eq(transactions.source, filters.source as any));
+      query = query.eq('source', filters.source);
     }
 
     if (filters.startDate) {
-      conditions.push(gte(transactions.date, filters.startDate));
+      query = query.gte('date', filters.startDate.toISOString());
     }
 
     if (filters.endDate) {
-      conditions.push(lte(transactions.date, filters.endDate));
+      query = query.lte('date', filters.endDate.toISOString());
     }
 
-    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+    query = query.order('date', { ascending: false });
 
-    return await db
-      .select()
-      .from(transactions)
-      .where(whereClause)
-      .orderBy(desc(transactions.date));
+    const { data, error } = await query;
+    if (error) throw error;
+    return data || [];
   }
 
   async updateTransaction(id: string, updates: Partial<InsertTransaction>): Promise<Transaction | undefined> {
-    const [transaction] = await db
-      .update(transactions)
-      .set(updates)
-      .where(eq(transactions.id, id))
-      .returning();
-    return transaction || undefined;
+    const { data, error } = await supabase
+      .from('transactions')
+      .update(updates)
+      .eq('id', id)
+      .select()
+      .maybeSingle();
+
+    if (error) throw error;
+    return data || undefined;
   }
 
   async deleteTransaction(id: string): Promise<boolean> {
-    const result = await db.delete(transactions).where(eq(transactions.id, id));
-    return (result.rowCount ?? 0) > 0;
+    const { error } = await supabase
+      .from('transactions')
+      .delete()
+      .eq('id', id);
+
+    return !error;
   }
 
   async getTransactionStats(startDate?: Date, endDate?: Date): Promise<{
@@ -103,60 +121,39 @@ export class DatabaseStorage implements IStorage {
     categoryBreakdown: Record<string, number>;
     sourceBreakdown: Record<string, number>;
   }> {
-    const conditions = [eq(transactions.status, 'completed')];
-    
+    let query = supabase
+      .from('transactions')
+      .select('*')
+      .eq('status', 'completed');
+
     if (startDate) {
-      conditions.push(gte(transactions.date, startDate));
+      query = query.gte('date', startDate.toISOString());
     }
-    
+
     if (endDate) {
-      conditions.push(lte(transactions.date, endDate));
+      query = query.lte('date', endDate.toISOString());
     }
 
-    const whereClause = and(...conditions);
+    const { data, error } = await query;
+    if (error) throw error;
 
-    // Get total income and count
-    const [totals] = await db
-      .select({
-        totalIncome: sql<number>`COALESCE(SUM(CAST(${transactions.amount} AS DECIMAL)), 0)`,
-        transactionCount: sql<number>`COUNT(*)`
-      })
-      .from(transactions)
-      .where(whereClause);
+    const transactions = data || [];
 
-    // Get category breakdown
-    const categoryStats = await db
-      .select({
-        category: transactions.category,
-        total: sql<number>`SUM(CAST(${transactions.amount} AS DECIMAL))`
-      })
-      .from(transactions)
-      .where(whereClause)
-      .groupBy(transactions.category);
+    const totalIncome = transactions.reduce((sum, t) => sum + parseFloat(t.amount), 0);
+    const transactionCount = transactions.length;
 
-    // Get source breakdown
-    const sourceStats = await db
-      .select({
-        source: transactions.source,
-        total: sql<number>`SUM(CAST(${transactions.amount} AS DECIMAL))`
-      })
-      .from(transactions)
-      .where(whereClause)
-      .groupBy(transactions.source);
+    const categoryBreakdown: Record<string, number> = {};
+    const sourceBreakdown: Record<string, number> = {};
 
-    const categoryBreakdown = categoryStats.reduce((acc, stat) => {
-      acc[stat.category] = Number(stat.total);
-      return acc;
-    }, {} as Record<string, number>);
-
-    const sourceBreakdown = sourceStats.reduce((acc, stat) => {
-      acc[stat.source] = Number(stat.total);
-      return acc;
-    }, {} as Record<string, number>);
+    transactions.forEach(t => {
+      const amount = parseFloat(t.amount);
+      categoryBreakdown[t.category] = (categoryBreakdown[t.category] || 0) + amount;
+      sourceBreakdown[t.source] = (sourceBreakdown[t.source] || 0) + amount;
+    });
 
     return {
-      totalIncome: Number(totals.totalIncome),
-      transactionCount: Number(totals.transactionCount),
+      totalIncome,
+      transactionCount,
       categoryBreakdown,
       sourceBreakdown
     };
