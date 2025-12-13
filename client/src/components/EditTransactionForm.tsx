@@ -165,6 +165,7 @@ export default function EditTransactionForm({ transaction, onSubmit, onCancel }:
                   <SelectItem value="session-coaching">Session and coaching</SelectItem>
                   <SelectItem value="monthly-subscription">Monthly subscription</SelectItem>
                   <SelectItem value="weekly-subscription">Weekly subscription</SelectItem>
+                  <SelectItem value="expense">Expense</SelectItem>
                   <SelectItem value="others">Others</SelectItem>
                 </SelectContent>
               </Select>

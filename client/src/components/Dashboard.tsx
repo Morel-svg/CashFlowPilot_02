@@ -211,31 +211,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* API Integration Status */}
-        <Card className="border-l-4 border-l-primary">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <p className="font-medium text-foreground">API Integration Status</p>
-                <p className="text-sm text-muted-foreground">Connect your Wave and Orange Money accounts for automatic transaction sync</p>
-              </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="outline" className="gap-1">
-                  <div className="w-2 h-2 bg-yellow-500 rounded-full" />
-                  Wave: Pending
-                </Badge>
-                <Badge variant="outline" className="gap-1">
-                  <div className="w-2 h-2 bg-yellow-500 rounded-full" />
-                  Orange Money: Pending
-                </Badge>
-                <Button size="sm" variant="outline" className="gap-1" data-testid="button-setup-api">
-                  <Settings className="h-3 w-3" />
-                  Setup
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+
 
         {/* Dashboard Grid */}
         <div className="grid gap-6 lg:grid-cols-4">

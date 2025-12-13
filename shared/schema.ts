@@ -4,7 +4,7 @@ import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // Enums for transaction categories and sources
-export const categoryEnum = pgEnum("category", ["session", "session-coaching", "monthly-subscription", "weekly-subscription", "others"]);
+export const categoryEnum = pgEnum("category", ["session", "session-coaching", "monthly-subscription", "weekly-subscription", "expense", "others"]);
 export const sourceEnum = pgEnum("source", ["wave", "orange-money", "manual"]);
 export const statusEnum = pgEnum("status", ["completed", "pending", "failed"]);
 export const userRoleEnum = pgEnum("user_role", ["admin", "manager", "staff"]);

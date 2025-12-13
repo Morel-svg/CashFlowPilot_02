@@ -17,7 +17,7 @@ export default function AddTransactionForm({ onSubmit, onCancel }: AddTransactio
   const [formData, setFormData] = useState({
     amount: '',
     description: '',
-    category: '' as 'session' | 'session-coaching' | 'monthly-subscription' | 'weekly-subscription' | 'others' | '',
+    category: '' as 'session' | 'session-coaching' | 'monthly-subscription' | 'weekly-subscription' | 'expense' | 'others' | '',
     source: '' as 'wave' | 'orange-money' | 'manual' | '',
     date: new Date().toISOString().split('T')[0],
     status: 'completed' as 'completed' | 'pending' | 'failed'
@@ -164,6 +164,7 @@ export default function AddTransactionForm({ onSubmit, onCancel }: AddTransactio
                   <SelectItem value="session-coaching">Session and coaching</SelectItem>
                   <SelectItem value="monthly-subscription">Monthly subscription</SelectItem>
                   <SelectItem value="weekly-subscription">Weekly subscription</SelectItem>
+                  <SelectItem value="expense">Expense</SelectItem>
                   <SelectItem value="others">Others</SelectItem>
                 </SelectContent>
               </Select>

@@ -41,28 +41,32 @@ interface AnalyticsChartsProps {
   isLoading?: boolean;
 }
 
-const COLORS = ["hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))", "hsl(var(--chart-5))"];
+const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042", "#8884d8"];
 
 const categoryConfig: ChartConfig = {
   session: {
     label: "Session",
-    color: "hsl(var(--chart-1))",
+    color: "#0088FE",
   },
   "session-coaching": {
     label: "Session + Coaching",
-    color: "hsl(var(--chart-2))",
+    color: "#00C49F",
   },
   "monthly-subscription": {
     label: "Monthly Subscription",
-    color: "hsl(var(--chart-3))",
+    color: "#FFBB28",
   },
   "weekly-subscription": {
     label: "Weekly Subscription",
-    color: "hsl(var(--chart-4))",
+    color: "#FF8042",
+  },
+  "expense": {
+    label: "Expense",
+    color: "#EF4444",
   },
   "others": {
     label: "Others",
-    color: "hsl(var(--chart-5))",
+    color: "#8884d8",
   },
 };
 
@@ -159,32 +163,38 @@ export default function AnalyticsCharts({ data, isLoading = false }: AnalyticsCh
           <CardTitle className="text-lg">Income by Category</CardTitle>
         </CardHeader>
         <CardContent>
-          <ChartContainer config={categoryConfig} className="h-64">
-            <PieChart>
-              <ChartTooltip
-                content={
-                  <ChartTooltipContent
-                    formatter={(value) => [formatCurrency(Number(value)), ""]}
-                  />
-                }
-              />
-              <Pie
-                data={categoryData}
-                dataKey="value"
-                nameKey="name"
-                cx="50%"
-                cy="50%"
-                innerRadius={40}
-                outerRadius={80}
-                paddingAngle={2}
-              >
-                {categoryData.map((_, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <ChartLegend content={<ChartLegendContent />} />
-            </PieChart>
-          </ChartContainer>
+          {categoryData.length > 0 ? (
+            <ChartContainer config={categoryConfig} className="h-64">
+              <PieChart>
+                <ChartTooltip
+                  content={
+                    <ChartTooltipContent
+                      formatter={(value) => [formatCurrency(Number(value)), ""]}
+                    />
+                  }
+                />
+                <Pie
+                  data={categoryData}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={40}
+                  outerRadius={80}
+                  paddingAngle={2}
+                >
+                  {categoryData.map((_, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <ChartLegend content={<ChartLegendContent />} />
+              </PieChart>
+            </ChartContainer>
+          ) : (
+            <div className="h-64 flex items-center justify-center text-muted-foreground">
+              No data available
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -194,36 +204,43 @@ export default function AnalyticsCharts({ data, isLoading = false }: AnalyticsCh
           <CardTitle className="text-lg">Income by Source</CardTitle>
         </CardHeader>
         <CardContent>
-          <ChartContainer config={sourceConfig} className="h-64">
-            <PieChart>
-              <ChartTooltip
-                content={
-                  <ChartTooltipContent
-                    formatter={(value) => [formatCurrency(Number(value)), ""]}
-                  />
-                }
-              />
-              <Pie
-                data={sourceData}
-                dataKey="value"
-                nameKey="name"
-                cx="50%"
-                cy="50%"
-                innerRadius={40}
-                outerRadius={80}
-                paddingAngle={2}
-              >
-                {sourceData.map((entry, index) => {
-                  const sourceKey = entry.source as keyof typeof sourceConfig;
-                  const color = sourceConfig[sourceKey]?.color || COLORS[index % COLORS.length];
-                  return <Cell key={`cell-${index}`} fill={color} />;
-                })}
-              </Pie>
-              <ChartLegend content={<ChartLegendContent />} />
-            </PieChart>
-          </ChartContainer>
+          {sourceData.length > 0 ? (
+            <ChartContainer config={sourceConfig} className="h-64">
+              <PieChart>
+                <ChartTooltip
+                  content={
+                    <ChartTooltipContent
+                      formatter={(value) => [formatCurrency(Number(value)), ""]}
+                    />
+                  }
+                />
+                <Pie
+                  data={sourceData}
+                  dataKey="value"
+                  nameKey="name"
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={40}
+                  outerRadius={80}
+                  paddingAngle={2}
+                >
+                  {sourceData.map((entry, index) => {
+                    const sourceKey = entry.source as keyof typeof sourceConfig;
+                    const color = sourceConfig[sourceKey]?.color || COLORS[index % COLORS.length];
+                    return <Cell key={`cell-${index}`} fill={color} />;
+                  })}
+                </Pie>
+                <ChartLegend content={<ChartLegendContent />} />
+              </PieChart>
+            </ChartContainer>
+          ) : (
+            <div className="h-64 flex items-center justify-center text-muted-foreground">
+              No data available
+            </div>
+          )}
         </CardContent>
       </Card>
+
 
       {/* Monthly Income Trend */}
       <Card className="hover-elevate md:col-span-2 lg:col-span-1">
@@ -263,24 +280,30 @@ export default function AnalyticsCharts({ data, isLoading = false }: AnalyticsCh
           <CardTitle className="text-lg">Category Performance</CardTitle>
         </CardHeader>
         <CardContent>
-          <ChartContainer config={categoryConfig} className="h-64">
-            <BarChart data={categoryData}>
-              <XAxis dataKey="name" />
-              <YAxis />
-              <ChartTooltip
-                content={
-                  <ChartTooltipContent
-                    formatter={(value) => [formatCurrency(Number(value)), "Income"]}
-                  />
-                }
-              />
-              <Bar dataKey="value" radius={[4, 4, 0, 0]}>
-                {categoryData.map((_, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ChartContainer>
+          {categoryData.length > 0 ? (
+            <ChartContainer config={categoryConfig} className="h-64">
+              <BarChart data={categoryData}>
+                <XAxis dataKey="name" />
+                <YAxis />
+                <ChartTooltip
+                  content={
+                    <ChartTooltipContent
+                      formatter={(value) => [formatCurrency(Number(value)), "Income"]}
+                    />
+                  }
+                />
+                <Bar dataKey="value" radius={[4, 4, 0, 0]}>
+                  {categoryData.map((_, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ChartContainer>
+          ) : (
+            <div className="h-64 flex items-center justify-center text-muted-foreground">
+              No data available
+            </div>
+          )}
         </CardContent>
       </Card>
 
