@@ -1,7 +1,7 @@
 // Simple test script to verify transaction functionality
 // This script tests the API endpoints for transaction management
 
-const BASE_URL = 'http://localhost:5000';
+const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 
 async function testAPI() {
   console.log('🧪 Testing CashFlowPilot Transaction API...\n');

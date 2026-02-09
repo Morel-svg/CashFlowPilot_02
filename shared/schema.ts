@@ -67,3 +67,27 @@ export type Transaction = typeof transactions.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type LoginRequest = z.infer<typeof loginSchema>;
+
+export type StatsResponse = {
+  totalIncome: number;
+  transactionCount: number;
+  categoryBreakdown: Record<string, number>;
+  sourceBreakdown: Record<string, number>;
+  avgTransaction: number;
+  topCategory: string | null;
+  topSource: string | null;
+};
+
+export type PeriodStatsResponse = {
+  weekly: {
+    totalIncome: number;
+    transactionCount: number;
+  };
+  monthly: {
+    totalIncome: number;
+    transactionCount: number;
+  };
+  growthPercentage: number;
+  categoryBreakdown: Record<string, number>;
+  sourceBreakdown: Record<string, number>;
+};

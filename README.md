@@ -1,6 +1,6 @@
 # CashFlowPilot - Gym Income Management System
 
-A comprehensive web application for managing gym income transactions, built with React, TypeScript, Express, and PostgreSQL.
+A private, single-business dashboard for managing income transactions, built as a local Electron desktop app (React + Express).
 
 ## 🚀 Features
 
@@ -46,9 +46,8 @@ A comprehensive web application for managing gym income transactions, built with
 
 ### Backend
 - **Express.js** with TypeScript
-- **PostgreSQL** with Drizzle ORM
+- **Local file storage** (JSON file on disk)
 - **Zod** for validation
-- **Express Session** for session management
 
 ### Development Tools
 - **TypeScript** for type safety
@@ -69,28 +68,26 @@ A comprehensive web application for managing gym income transactions, built with
    npm install
    ```
 
-3. **Set up environment variables**
+3. **Run the desktop app (development)**
    ```bash
-   cp .env.example .env
-   # Edit .env with your database URL and other configuration
+   npm run electron:dev
    ```
 
-4. **Set up the database**
+4. **Build desktop installers (macOS + Windows)**
    ```bash
-   npm run db:push
+   npm run electron:pack
    ```
 
-5. **Start the development server**
+5. **Optional: run as a web app**
    ```bash
    npm run dev
    ```
 
-6. **Open your browser**
-   Navigate to `http://localhost:5000`
+   Navigate to `http://localhost:3000`
 
 ## 🧪 Testing
 
-Run the test script to verify all functionality:
+Run the test script to verify all functionality (requires the server to be running):
 
 ```bash
 node test-transactions.js
@@ -101,6 +98,15 @@ This will test:
 - Stats calculation
 - Filtering functionality
 - API endpoint responses
+
+## 💾 Data Storage
+
+The desktop app stores transactions locally as a JSON file:
+
+- macOS: `~/Library/Application Support/CashFlowPilot/data/transactions.json`
+- Windows: `%APPDATA%\\CashFlowPilot\\data\\transactions.json`
+
+To move the app to another computer, install it there and copy this file into the same location.
 
 ## 📊 Database Schema
 

@@ -1,6 +1,11 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
-import type { Transaction, InsertTransaction } from "@shared/schema";
+import type {
+  Transaction,
+  InsertTransaction,
+  StatsResponse,
+  PeriodStatsResponse,
+} from "@shared/schema";
 
 // Transaction API hooks
 export function useTransactions(filters?: {
@@ -96,7 +101,7 @@ export function useStats(filters?: {
   const queryString = searchParams.toString();
   const url = `/api/stats${queryString ? `?${queryString}` : ""}`;
 
-  return useQuery({
+  return useQuery<StatsResponse>({
     queryKey: ["/api/stats", filters],
     queryFn: async () => {
       const response = await fetch(url);
@@ -114,7 +119,7 @@ export function usePeriodStats(period: "weekly" | "monthly", startDate?: string,
   if (startDate) searchParams.set("startDate", startDate);
   if (endDate) searchParams.set("endDate", endDate);
 
-  return useQuery({
+  return useQuery<PeriodStatsResponse>({
     queryKey: ["/api/stats/period", period, startDate, endDate],
     queryFn: async () => {
       const response = await fetch(`/api/stats/period?${searchParams.toString()}`);
